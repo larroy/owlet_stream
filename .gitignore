@@ -1,0 +1,24 @@
+# Build artifacts (rebuilt by stream.sh)
+/owlet_stream
+/bionic_compat.so
+*.o
+
+# Captured streams / recordings
+*.mp4
+*.mkv
+*.h264
+
+# Credentials & local run helpers (NEVER commit)
+do.sh
+*creds*.json
+owlet_creds*
+
+# Derived/decompiled APK material — do not track (re-create per REPORT.md)
+*.apk
+*.apkm
+/owlet_src/
+/owlet_base_dec/
+/owlet_extracted/
+
+# TUTK lib backups
+tutk_libs/*.orig
