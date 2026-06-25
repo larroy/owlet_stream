@@ -55,7 +55,8 @@ elif [[ "$OUTPUT" == *.mkv || "$OUTPUT" == *.h264 ]]; then
 elif [[ "$OUTPUT" == rtp://* ]]; then
     FFMPEG_ARGS=(-c:v copy -f rtp "$OUTPUT")
 elif [[ "$OUTPUT" == rtsp://* ]]; then
-    FFMPEG_ARGS=(-c:v copy -rtsp_transport tcp -f rtsp "$OUTPUT")
+    # -pkt_size 1200 keeps RTP payloads under the MTU so MediaMTX doesn't remux.
+    FFMPEG_ARGS=(-c:v copy -rtsp_transport tcp -pkt_size 1200 -f rtsp "$OUTPUT")
 else
     FFMPEG_ARGS=(-c:v copy "$OUTPUT")
 fi
@@ -76,9 +77,15 @@ export LD_PRELOAD="${COMPAT_SO}${LD_PRELOAD:+:$LD_PRELOAD}"
 # ffmpeg needs a generous probe window: the P2P handshake delays the first
 # bytes, and the camera sends H.264 without an explicit size until the first
 # SPS/I-frame arrives. analyzeduration/probesize give it time to find them.
+#
+# -use_wallclock_as_timestamps stamps each incoming NALU with its arrival time.
+# The raw H.264 the camera sends carries no PTS/DTS, so without this ffmpeg emits
+# packets with unset timestamps — fine for a plain file, but it breaks RTP timing
+# and makes VLC reject the RTSP stream ("Timestamps are unset" / SETUP failures).
+# Wallclock timing is correct for a live source and keeps -c:v copy (no re-encode).
 "$STREAM_BIN" "$TUTKID" "$CAMPASS" "$AUTHKEY" | \
     ffmpeg -loglevel warning \
-           -fflags +genpts \
+           -use_wallclock_as_timestamps 1 \
            -analyzeduration 10M \
            -probesize 10M \
            -f h264 \
