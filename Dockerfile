@@ -13,13 +13,15 @@ RUN apt-get update && apt-get install -y \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install latest static ffmpeg from johnvansickle.com (avoids the Ubuntu 24.04 segfault)
+# Install the latest stable static ffmpeg (8.1.x "Hoare") from BtbN, the build
+# provider linked from ffmpeg.org. A static build also avoids the Ubuntu 24.04
+# system-ffmpeg segfault on the -f h264 -i pipe:0 path.
 RUN set -eux; \
-    wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz \
+    wget -q "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-linux64-gpl-8.1.tar.xz" \
          -O /tmp/ffmpeg.tar.xz; \
     tar -xf /tmp/ffmpeg.tar.xz -C /tmp; \
-    mv /tmp/ffmpeg-*-amd64-static/ffmpeg  /usr/local/bin/ffmpeg; \
-    mv /tmp/ffmpeg-*-amd64-static/ffprobe /usr/local/bin/ffprobe; \
+    mv /tmp/ffmpeg-*-linux64-gpl-*/bin/ffmpeg  /usr/local/bin/ffmpeg; \
+    mv /tmp/ffmpeg-*-linux64-gpl-*/bin/ffprobe /usr/local/bin/ffprobe; \
     rm -rf /tmp/ffmpeg*; \
     ffmpeg -version | head -1
 

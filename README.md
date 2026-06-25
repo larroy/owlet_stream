@@ -27,6 +27,15 @@ APK). Nothing else to install.
 
 ---
 
+
+## Using docker
+```
+docker build -t owlet-stream:latest .
+docker run --rm -p 5004:5004 -p 8554:8554 -it owlet-stream:latest ./serve_rtsp.sh you@example.com 'YOUR_PASSWORD' OCXXXXCAMERA_DS
+```
+ 
+---
+
 ## Quick start
 
 ```bash
