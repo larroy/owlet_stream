@@ -35,6 +35,9 @@ docker run --rm -p 8554:8554/tcp -it owlet-stream:latest ./serve_rtsp.sh you@exa
 ```
 
 Then connect to stream: `rtsp://<host-ip>:8554/owlet`
+
+Only the RTSP server port is published here. The RTP default uses UDP 5004 for
+native runs, but `serve_rtsp.sh` publishes to MediaMTX inside the container.
  
 ---
 
