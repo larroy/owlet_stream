@@ -57,6 +57,33 @@ The 4th argument is any ffmpeg-compatible target:
 ./stream.sh ... /tmp/owlet.mp4            # MP4 file
 ```
 
+---
+
+## RTSP for VLC (Docker)
+
+To watch in **VLC**, run the container with the embedded RTSP server
+(MediaMTX). `serve_rtsp.sh` starts the server and publishes the camera to it:
+
+```bash
+docker run --rm -it --network host owlet-stream:latest \
+  ./serve_rtsp.sh you@example.com 'YOUR_PASSWORD' OCXXXXCAMERA_DSN
+```
+
+Then in VLC: **Media → Open Network Stream** and enter
+
+```
+rtsp://<host-ip>:8554/owlet
+```
+
+Use the host machine's LAN IP (e.g. `rtsp://192.168.1.50:8554/owlet`). On the
+same machine `rtsp://127.0.0.1:8554/owlet` also works. `--network host` is
+required so VLC can reach port 8554 and so the camera's UDP P2P traffic can
+leave the container. Pass a custom path as a 4th argument
+(`./serve_rtsp.sh ... mycam` → `rtsp://<host-ip>:8554/mycam`).
+
+> VLC buffers ~1 s by default; for lower latency set
+> *Tools → Preferences → Input/Codecs → Network caching* to a smaller value.
+
 > Tip: quote your password if it contains shell-special characters (`@ # $ ! ^ …`).
 
 ---
@@ -142,6 +169,7 @@ gcc -shared -fPIC -o bionic_compat.so bionic_compat.c -ldl
 | File | Purpose |
 |------|---------|
 | `stream.sh` | End-to-end launcher (auth → stream → ffmpeg) |
+| `serve_rtsp.sh` | Starts the embedded MediaMTX RTSP server and publishes the stream (for VLC) |
 | `owlet_auth.py` | Firebase login + KMS credential fetch |
 | `owlet_stream.c` / `owlet_stream` | TUTK P2P client → raw H.264 on stdout |
 | `bionic_compat.c` / `bionic_compat.so` | `LD_PRELOAD` shim (Bionic symbols + addrinfo ABI fix) |

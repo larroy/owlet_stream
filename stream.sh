@@ -55,7 +55,7 @@ elif [[ "$OUTPUT" == *.mkv || "$OUTPUT" == *.h264 ]]; then
 elif [[ "$OUTPUT" == rtp://* ]]; then
     FFMPEG_ARGS=(-c:v copy -f rtp "$OUTPUT")
 elif [[ "$OUTPUT" == rtsp://* ]]; then
-    FFMPEG_ARGS=(-c:v copy -f rtsp "$OUTPUT")
+    FFMPEG_ARGS=(-c:v copy -rtsp_transport tcp -f rtsp "$OUTPUT")
 else
     FFMPEG_ARGS=(-c:v copy "$OUTPUT")
 fi
