@@ -31,7 +31,7 @@ APK). Nothing else to install.
 ## Using docker
 ```
 docker build -t owlet-stream:latest .
-docker run --rm -p 5004:5004 -p 8554:8554 -it owlet-stream:latest ./serve_rtsp.sh you@example.com 'YOUR_PASSWORD' OCXXXXCAMERA_DS
+docker run --rm -p 8554:8554/tcp -it owlet-stream:latest ./serve_rtsp.sh you@example.com 'YOUR_PASSWORD' OCXXXXCAMERA_DSN
 ```
 
 Then connect to stream: `rtsp://<host-ip>:8554/owlet`
@@ -76,7 +76,7 @@ To watch in **VLC**, run the container with the embedded RTSP server
 (MediaMTX). `serve_rtsp.sh` starts the server and publishes the camera to it:
 
 ```bash
-docker run --rm -it --network host owlet-stream:latest \
+docker run --rm -it -p 8554:8554/tcp owlet-stream:latest \
   ./serve_rtsp.sh you@example.com 'YOUR_PASSWORD' OCXXXXCAMERA_DSN
 ```
 
@@ -87,9 +87,9 @@ rtsp://<host-ip>:8554/owlet
 ```
 
 Use the host machine's LAN IP (e.g. `rtsp://192.168.1.50:8554/owlet`). On the
-same machine `rtsp://127.0.0.1:8554/owlet` also works. `--network host` is
-required so VLC can reach port 8554 and so the camera's UDP P2P traffic can
-leave the container. Pass a custom path as a 4th argument
+same machine `rtsp://127.0.0.1:8554/owlet` also works. The `-p` flag publishes
+the container's RTSP port to the Docker host; the camera's outbound P2P traffic
+does not require host networking. Pass a custom path as a 4th argument
 (`./serve_rtsp.sh ... mycam` → `rtsp://<host-ip>:8554/mycam`).
 
 > VLC buffers ~1 s by default; for lower latency set

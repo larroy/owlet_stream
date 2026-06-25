@@ -6,7 +6,7 @@
 #   ./serve_rtsp.sh <email> <password> <camera_dsn> [rtsp_path]
 #
 # Then point VLC at:   rtsp://<host-ip>:8554/<rtsp_path>   (default path: owlet)
-# Run the container with --network host so port 8554 is reachable.
+# Run the container with -p 8554:8554/tcp so port 8554 is reachable.
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
