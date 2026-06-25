@@ -69,25 +69,37 @@ if [[ ! -f "$COMPAT_SO" ]]; then
 fi
 
 # Stream: owlet_stream → ffmpeg
-# LD_LIBRARY_PATH: tutk_libs first so libc.so/libm.so/libdl.so symlinks are found
-# LD_PRELOAD: bionic_compat.so provides missing Bionic symbols (__errno, __sF, etc.)
-export TUTK_LIB_DIR
-export LD_LIBRARY_PATH="${TUTK_LIB_DIR}:${LD_LIBRARY_PATH:-}"
-export LD_PRELOAD="${COMPAT_SO}${LD_PRELOAD:+:$LD_PRELOAD}"
+#
+# IMPORTANT: the Bionic env (LD_PRELOAD/LD_LIBRARY_PATH) must apply ONLY to
+# owlet_stream, not to ffmpeg. bionic_compat.so overrides getaddrinfo to return
+# Bionic-layout addrinfo structs for the Android TUTK libs; if ffmpeg inherits
+# the preload it reads ai_addr at the wrong offset and every connect() fails with
+# "Bad address" (e.g. it can't reach the RTSP server). So we set these inline on
+# the owlet_stream command only — the pipe leaves ffmpeg's environment clean.
+#   LD_LIBRARY_PATH: tutk_libs first so libc.so/libm.so/libdl.so symlinks resolve
+#   LD_PRELOAD: bionic_compat.so supplies missing Bionic symbols (__errno, __sF, …)
+#
 # ffmpeg needs a generous probe window: the P2P handshake delays the first
 # bytes, and the camera sends H.264 without an explicit size until the first
 # SPS/I-frame arrives. analyzeduration/probesize give it time to find them.
 #
-# -use_wallclock_as_timestamps stamps each incoming NALU with its arrival time.
-# The raw H.264 the camera sends carries no PTS/DTS, so without this ffmpeg emits
-# packets with unset timestamps — fine for a plain file, but it breaks RTP timing
-# and makes VLC reject the RTSP stream ("Timestamps are unset" / SETUP failures).
-# Wallclock timing is correct for a live source and keeps -c:v copy (no re-encode).
+# Timestamps: the raw H.264 the camera sends carries no PTS/DTS, so with -c:v copy
+# ffmpeg emits packets with unset timestamps. That is fine for a plain file but
+# breaks RTP timing and makes VLC reject the RTSP stream ("Timestamps are unset").
+# We synthesize them with the setts bitstream filter, which assigns a fixed-rate
+# timestamp per output frame (N = frame index; the H.264 demuxer timebase is
+# 1/1200000, so N*48000 = 25 fps). Unlike -use_wallclock_as_timestamps, this is
+# immune to the bursty way the camera delivers NALUs — wallclock stamps at read
+# time, which goes non-monotonic when one read spans frame boundaries. setts is
+# deterministic and always monotonic, and still keeps -c:v copy (no re-encode).
+TUTK_LIB_DIR="$TUTK_LIB_DIR" \
+LD_LIBRARY_PATH="${TUTK_LIB_DIR}:${LD_LIBRARY_PATH:-}" \
+LD_PRELOAD="${COMPAT_SO}${LD_PRELOAD:+:$LD_PRELOAD}" \
 "$STREAM_BIN" "$TUTKID" "$CAMPASS" "$AUTHKEY" | \
     ffmpeg -loglevel warning \
-           -use_wallclock_as_timestamps 1 \
            -analyzeduration 10M \
            -probesize 10M \
            -f h264 \
            -i pipe:0 \
+           -bsf:v setts=ts=N*48000 \
            "${FFMPEG_ARGS[@]}"
