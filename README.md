@@ -33,6 +33,8 @@ APK). Nothing else to install.
 docker build -t owlet-stream:latest .
 docker run --rm -p 5004:5004 -p 8554:8554 -it owlet-stream:latest ./serve_rtsp.sh you@example.com 'YOUR_PASSWORD' OCXXXXCAMERA_DS
 ```
+
+Then connect to stream: `rtsp://<host-ip>:8554/owlet`
  
 ---
 
